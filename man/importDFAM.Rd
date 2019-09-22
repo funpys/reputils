@@ -2,7 +2,7 @@
 % Please edit documentation in R/import.R
 \name{importDFAM}
 \alias{importDFAM}
-\title{Import TE intervals from DFAM}
+\title{Import TE intervals in DFAM format}
 \usage{
 importDFAM(path, curate = FALSE, main_assembly = TRUE)
 }

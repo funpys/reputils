@@ -2,7 +2,7 @@
 % Please edit documentation in R/import.R
 \name{importUCSC}
 \alias{importUCSC}
-\title{Import TE intervals from UCSC table browser}
+\title{Import TE intervals in UCSC table browser format}
 \usage{
 importUCSC(path = "path to UCSC RMSK file", curate = FALSE,
   main_classes = TRUE, main_assembly = TRUE)

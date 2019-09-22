@@ -7,7 +7,8 @@
 #' @return Returns GRanges object containing seqs column
 #' @export
 addSeq <- function(BSgenome = NULL, 
-                   intervals)
+                   intervals,
+                   n_threads = NULL)
 {
   if (is.null(BSgenome)) { stop ('Please provide valid BSgenome object') }
   # add genomic seq
@@ -15,7 +16,10 @@ addSeq <- function(BSgenome = NULL,
   seqlevelsStyle(intervals) <- 'UCSC'
   intervals <- as(intervals, 'GRanges')
   
-  n_threads <- parallel::detectCores()
+  if (is.null(n_threads))
+  {
+    n_threads <- parallel::detectCores()
+  }
   
   if (n_threads > 5)
   {
@@ -35,6 +39,55 @@ addSeq <- function(BSgenome = NULL,
   }
   
   return(intervals)
+}
+
+chunk <- function(vect, n_chunks = NULL, chunk_size = 1e4)
+{
+  if (!is.null(n_chunks)) 
+  {
+    chunk_size <- floor(length(vect) / n_chunks)
+  }
+  
+  chunks <- split(1:length(vect), ceiling(seq_along(1:length(vect)) / chunk_size))
+  return(chunks)
+}
+
+chunkFiles <- function(paths,
+                       n_chunks = NULL)
+{
+  if (is.null(n_chunks))
+  {
+    stop ("Please define number of chunks ('n_chunks')")
+  }
+  
+  if (sum(file.exists(paths)) != length(paths))
+  {
+    stop ('Not all paths are correct')
+  }
+  
+  file_sizes <- file.size(paths)
+  tot_size  <- sum(file_sizes)
+  res <- cut(cumsum(file_sizes), breaks = seq(1, tot_size, l = n_chunks + 1), labels = FALSE)
+  
+  return(res)
+}
+
+#' Fast matching 
+#' @export
+`%fin%` <- function(x, table) {
+  stopifnot(require(fastmatch))
+  fastmatch::fmatch(x, table, nomatch = 0L) > 0L
+}
+
+
+#' Extract TSS coordinates from Gencode
+#' @export
+getTSS <- function(genes)
+{
+  transcripts <- genes[genes$type == 'transcript']
+  
+  tss <- mutate(anchor_5p(transcripts), width = 1)
+  return(tss)
 }
 
 #' Randomly mutate read sequences

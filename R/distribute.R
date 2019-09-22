@@ -57,7 +57,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
               }
           }
           suppressWarnings(save(list = vars, file = paste(tmp.dirname,
-              "envir", sep = "/"), envir = parent.frame()), compress = FALSE)
+              "envir", sep = "/"), envir = parent.frame(), compress = FALSE))
         } else {
           vars <- ls(all.names = TRUE, envir = envir)
           message(vars)
@@ -167,7 +167,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
                   fname <- sprintf("%s/%d.retv", tmp.dirname,
                     i)
                   if (file.exists(fname)) {
-                    fst::read_fst(fname)
+                    retv <- readRDS(fname)
                     res$exit.status <- "success"
                     res$retv <- retv
                   }

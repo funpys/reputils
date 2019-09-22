@@ -2,7 +2,7 @@
 % Please edit documentation in R/import.R
 \name{importRMSK}
 \alias{importRMSK}
-\title{Import TE intervals from Repeatmasker}
+\title{Import TE intervals in Repeatmasker format}
 \usage{
 importRMSK(path, curate = FALSE, main_assembly = TRUE,
   main_classes = TRUE, proper_alignments = TRUE)

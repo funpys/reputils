@@ -4,7 +4,7 @@
 \alias{addSeq}
 \title{Add sequence column to GRanges object}
 \usage{
-addSeq(BSgenome = NULL, intervals)
+addSeq(BSgenome = NULL, intervals, n_threads = NULL)
 }
 \arguments{
 \item{BSgenome}{BSgenome. BSgenome to query sequences, e.g. Hsapiens.}
