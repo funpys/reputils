@@ -1,0 +1,53 @@
+template:
+  params:
+    bootswatch: yeti
+authors:
+  David Brocks:
+    href: https://scholar.google.de/citations?user=ossdDj4AAAAJ&hl=en&oi=ao
+
+navbar:
+  title: "Reputils"
+  left:
+    - text: "Home"
+      icon: fa-home
+      href: index.html
+    - text: "Prerequisites"
+      icon: fa-play-circle
+      href: articles/Prerequisites.html
+    - text: "Tutorials"
+      menu:
+      - text: "Read alignment QC"
+        href: articles/Mapping_QC.html
+    - text: "Reference"
+      href: reference/index.html
+      icon: fa-th-list
+    - text: "News"
+      icon: fa-news
+      href: news/index.html
+  right:
+    - text: "Bitbucket"
+      icon: fa-bitbucket-square
+      href: https://bitbucket.org/tanaylab/Reputils/src/default/
+
+reference:
+  - title: "Benchmarking"
+    desc: >
+      Functions for alignment benchmarking 
+    contents:
+      - mutateReads
+      - mutateSeqs
+  - title: "Curation"
+    desc: >
+     Functions to curate genomic intervals
+    contents:
+      - starts_with("curate")
+  - title: "Import"
+    desc: >
+      Functions for importing data
+    contents:
+      - starts_with("import")
+  - title: "Transformation"
+    desc: >
+      Functions for transforming data
+    contents:
+      - msaToLong

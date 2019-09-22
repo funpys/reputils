@@ -1,0 +1,229 @@
+---
+title: "Reputils vignette"
+author: "David Brocks"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Repguide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+# Benchmark read alignments to transposable elements
+
+In this tutorial, we extract the genomic reference sequence of our read alignments, introduce random base substitutations, and investigate the impact of error frequencies on read mis-mapping.
+
+## Getting started
+
+We start the workflow by loading Reputils and other libraries, the human hg38 _BSgenome_ object and TE intervals into our R environment:
+```{r, eval = TRUE, echo = FALSE, warning = FALSE}
+devtools::load_all('/net/mraid14/export/tgdata/users/davidbr/src/Reputils/')
+library(BSgenome.Hsapiens.UCSC.hg38)
+library(tidyverse)
+
+# import TE intervals
+tes <- importRMSK('~/tgdata/src/Repsc/inst/extdata/hg38.fa.out.gz', curate = TRUE)
+```
+
+## Introduce sequence errors
+
+```{r, eval = FALSE, echo = TRUE, warning = FALSE}
+bams    <- grep('deduplicated', dir('~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/aligned/chunked_bams/', pattern = '.bam$', full.names = TRUE), value = TRUE)
+
+mutateReads(BSgenome   = Hsapiens,
+            reads      = bams,
+            paired     = TRUE,
+            tes        = tes,
+            n_reads    = 1e6,
+            outdir     = '~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/fastqs/',
+            error_rate = c(0, 0.25, 0.5, 1, 2, 4, 8))
+```           
+
+## STAR alignment
+
+```{r, eval = FALSE, echo = TRUE, warning = FALSE} 
+r1 <- dir('~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/fastqs/', pattern = 'perc_error_R1', full.names = TRUE)
+r2 <- dir('~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/fastqs/', pattern = 'perc_error_R2', full.names = TRUE)
+
+setwd('~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/aligned/')
+cmds <- list()
+for (i in 1:length(r1))
+{
+  cmds[[i]] <- 
+    glue("system('/net/mraid14/export/data/tools/star/STAR-2.5.1b/source/STAR --runThreadN 10 --genomeDir /net/mraid14/export/data/users/davidbr/tools/cellranger/references/refdata-cellranger-GRCh38-1.2.0/star/ --outSAMtype BAM SortedByCoordinate --outFilterMultimapScoreRange 2 --outFileNamePrefix {gsub('.fastq', '.', basename(r1[i]))} --outSAMunmapped Within --readFilesIn {r1[i]} {r2[i]}')")
+}
+
+# create new empty env and fill with relevant
+empty <- new.env(parent = emptyenv())
+
+# distribute, compute and combine
+res <- 
+  gcluster.run3(command_list = cmds,  
+                  max.jobs = 50, 
+                  envir = empty, 
+                  io_saturation = FALSE)
+```                  
+
+## Import reads
+
+```{r, eval = TRUE, echo = TRUE, warning = FALSE}
+bams  <- grep('error', dir('~/davidbr/proj/epitherapy/data/h1299/10x/dacsb/aligned/', pattern = 'bam$', full.names = TRUE), value = TRUE)
+
+reads <- importBAM(bams,
+                   paired  = TRUE, 
+                   mate    = 'first',
+                   anchor  = 'fiveprime',
+                   multi   = FALSE,
+                   what    = 'qname',
+                   barcode = c('err_0.25', 'err_0.5', 'err_0', 'err_1', 'err_2', 'err_4', 'err_8'))
+ ```                
+
+## Benchmarking
+
+### Percent mapped to same TE locus
+ 
+```{r, eval = TRUE, echo = TRUE, warning = FALSE}
+# add matching TE locus
+reads_anno <- 
+  plyranges::join_overlap_left_directed(reads, tes) %>% 
+  as_tibble()   
+
+# exclude reads not mapped or not mapping to TEs at 0% error_rate
+reads_anno <-
+  reads_anno %>%
+  filter(qname %in% qname[barcode == 'err_0' & !is.na(name)])
+  
+p_n_reads <- 
+  reads_anno %>% 
+  count(barcode) %>%
+  ggplot(aes(barcode, n)) + 
+    geom_bar(stat = 'identity') +
+    xlab('Read error (%)') +
+    ylab('Uniquely mapped reads (#)') +
+    theme(axis.text.x = element_text(angle = 90))
+
+# get families with min 100 reads
+fam_expr <- 
+  reads_anno %>%
+  filter(barcode == 'err_0') %>% 
+  count(name) %>%
+  filter(n >= 100)
+
+read_stats <- 
+  reads_anno %>%
+    group_by(qname) %>% 
+    mutate(name0 = name[barcode == 'err_0'],                              # get read TE family mapping under 0% error
+           same_locus = id_unique == id_unique[barcode == 'err_0']) %>%   # check if TE locus mapping is same as under 0% error
+    ungroup %>%
+    replace_na(list(same_locus = FALSE)) %>%                              
+    group_by(name0, barcode) %>%
+    summarize(perc_same = sum(same_locus) / length(same_locus) * 100) %>%
+    ungroup
+    
+# annotate and filter
+read_stats_f <-
+  read_stats %>%
+    inner_join(.,                            # filter for expressed families
+               fam_expr %>%
+                rename(name0 = name)
+              ) %>%
+    left_join(.,                             # add class annotation
+              reads_anno %>% 
+                rename(name0 = name) %>% 
+                select(name0, class) %>% 
+                distinct
+              ) 
+              
+# label worst families
+read_stats_f <-
+  read_stats_f %>% 
+  group_by(class) %>% 
+  mutate(worst = perc_same == min(perc_same)) %>% 
+  ungroup %>%
+  mutate(label = ifelse(worst, name0, ''))              
+
+# plot
+p_same_perc <-
+  read_stats_f %>% 
+    ggplot(aes(x = barcode, y = perc_same, group = name0, col = class, label = label)) + 
+      geom_point() +
+      geom_line() +
+      facet_wrap(~class) +
+      scale_color_brewer(palette = 'Set1') +
+      ggrepel::geom_label_repel() +
+      xlab('Read error (%)') +
+      ylab('Reads mapping to true TE locus (%)') + 
+      theme(legend.position = 'none',
+            axis.text.x = element_text(angle = 90))
+```     
+
+### LTR12C UMI counts
+
+```{r, eval = TRUE, echo = TRUE, warning = FALSE}
+ltr12c <- 
+  reads_anno %>% 
+    as_tibble %>% 
+    filter(name == 'LTR12C') %>% 
+    group_by(id_unique, barcode) %>% 
+    summarise(counts = sum(NH_weight)) %>% 
+    ungroup %>% 
+    spread(barcode, counts, fill = 0)             
+                
+# plot
+p1 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_0.25)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))  
+
+# plot
+p2 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_0.5)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))  
+      
+p3 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_1)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))     
+
+p4 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_2)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))  
+
+p5 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_4)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))      
+
+p6 <- 
+  ltr12c %>%
+    ggplot(aes(x = err_0, y = err_8)) +
+      ggrastr::geom_point_rast(size = 2) +
+      scale_y_log10(limits = c(1, 1e4)) +
+      scale_x_log10(limits = c(1, 1e4))       
+      
+p_comb1 <- cowplot::plot_grid(p_n_reads, p_same_perc, rel_widths = c(1,2))
+p_comb2 <- cowplot::plot_grid(p1, p2, p3, p4, p5, p6)
+```
+
+### Plotting
+
+```{r, fig.width = 7, fig.height=10, fig.align='center', warning = FALSE, message = FALSE}
+cowplot::plot_grid(p_comb1, p_comb2, ncol = 1)
+```
+ 

@@ -1,0 +1,35 @@
+---
+output: github_document
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+# Reputils <img src="docs/reference/figures/logo.png" align="right" alt="" width="120" />
+
+The Reputils R package is a _beta_ development version to facilitate analysis of transposable elements.
+
+#### Features include:
+ * Import of various TE coodinate formats
+ * Curation of TE intervals
+ * Mapping benchmarking
+ 
+More details on the usage of Reputils is available in the package [vignette](https://tanaylab.bitbucket.io/Reputils/articles/Reputils.html). 
+
+### Installation
+
+```{r, eval=FALSE}
+# Install BiocManager (in case you haven't already)
+if (!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+
+# Install Reputils
+install.packages('Reputils', repos = 'tanaylab.bitbucket.io/repo')
+```
+
+**Note**: Reputils requires R version 3.5 or higher. The package was tested on linux and macbook machines, but not on Windows. For improved speed performance, we recommend a multi-CPU/core workstation.
