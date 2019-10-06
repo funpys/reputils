@@ -7,7 +7,7 @@
 #' @return Returns a GRanges object with TE intervals
 #' @export
 importBAM <- function(bams, 
-                      paired       = NULL, 
+                      paired       = NA, 
                       multi        = TRUE,
                       what         = NA,
                       tag          = NA,
@@ -47,8 +47,8 @@ importBAM <- function(bams,
   }
   
   # pre-checking
-  if (is.null(paired) & is.null(bams$paired)) { stop ('Please specify paired status of bam files')  }
-  if (is.null(mate)   & is.null(bams$mate))   { stop ('Please specify mate to read from bam files') }
+  if (is.na(paired) & is.na(bams$paired)) { stop ('Please specify paired status of bam files')  }
+  if (is.na(mate)   & is.na(bams$mate))   { stop ('Please specify mate to read from bam files') }
   
   if (sum(dirname(bams$paths) == '.') > 0) { stop ('Please provide full path to files') }
   
@@ -96,7 +96,7 @@ importBAM <- function(bams,
     }
   }
   message ('Done')
-  
+
   # throw multi mapping reads if desired
   if (!multi)
   {
@@ -138,7 +138,7 @@ importBAM <- function(bams,
       }
     }
   } else {
-    if (seqlevelsStyle(as_granges(reads[sample(1:nrow(reads), 1000),])) != 'UCSC')
+    if (seqlevelsStyle(as_granges(reads[sample(1:nrow(reads), min(nrow(reads), 1000)),])) != 'UCSC')
     {
       reads <- reads[, seqnames := paste0('chr', seqnames)]
       reads <- reads[which(seqnames == 'chrMT'), seqnames := 'chrM']

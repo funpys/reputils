@@ -2,6 +2,8 @@
 
 export("%fin%")
 export(addSeq)
+export(chunk)
+export(chunkFiles)
 export(curateGenes)
 export(curateTEs)
 export(deduplicateBAM)

@@ -78,6 +78,8 @@ deduplicateBAM <- function(bam,
                            align_dist = NULL,
                            ncores     = 1)
 {
+  if(sum(grepl('Error in system', try(system('samtools', intern = T)))) > 0)  { stop ('samtools not found, please install and add to PATH')  }
+  if(sum(grepl('Error in system', try(system('umi_tools', intern = T)))) > 0) { stop ('UMI tools not found, please install and add to PATH') }
   if (sum(file.exists(bam)) != length(bam)) { stop ('Some bam files are not found, please provide full path') }
   if (is.null(paired))                      { stop ('Please specify whether SAM/BAM files contain paired-end alignments') }
   if (is.null(align_dist))                  { stop ('Please specify min distance between read alignments for contig splitting') }
@@ -112,7 +114,6 @@ deduplicateBAM <- function(bam,
     bam        <- bam_orig
   }
   
-  if (!dir.exists(outdir))      { stop ('Please provide valid outdir')                 }
   if (file.exists(bam_contig)) { stop ('Cannot overwrite existing file ', bam_contig) }
 
   # import reads from BAM  
@@ -207,11 +208,19 @@ deduplicateBAM <- function(bam,
 #' Splits BAM file per chromosome
 #' @export
 splitBAM <- function(bam,
-                     samtools  = TRUE,
                      main_only = TRUE,
                      future_plan = multicore)
 {
+  if (!file.exists(bam)) { stop ('BAM file not found') }
+  if (sum(grepl('Error in system', try(system('samtools', intern = T)))) > 0)  { stop ('samtools not found, please install and add to PATH')  }
   chroms_orig <- sapply(strsplit(fread(cmd = glue("samtools view -H {bam} | grep ^@SQ"), header = FALSE)$V2, ':', fixed = T), function(x) x[2])
+  
+  # index BAM if not indexed
+  if (!file.exists(gsub('.bam$', '.bai', bam)) | file.exists(paste0(bam, '.bai'))) 
+  { 
+    message ('Indexing BAM file')
+    system(glue("samtools index {bam} {paste0(bam, '.bai')}"))
+  } 
   
   if (sum(grepl('chr', chroms_orig)) == 0)
   {

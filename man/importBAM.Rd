@@ -4,7 +4,7 @@
 \alias{importBAM}
 \title{Parallel import of BAM files}
 \usage{
-importBAM(bams, paired = NULL, multi = TRUE, what = NA, tag = NA,
+importBAM(bams, paired = NA, multi = TRUE, what = NA, tag = NA,
   mate = NA, anchor = NULL, meta = NA, granges = FALSE,
   barcode = NA, data.table = TRUE, sorted = TRUE,
   use_gcluster = FALSE)

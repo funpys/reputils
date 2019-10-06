@@ -4,8 +4,7 @@
 \alias{splitBAM}
 \title{Splits BAM file per chromosome}
 \usage{
-splitBAM(bam, samtools = TRUE, main_only = TRUE,
-  future_plan = multicore)
+splitBAM(bam, main_only = TRUE, future_plan = multicore)
 }
 \description{
 Splits BAM file per chromosome

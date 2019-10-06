@@ -41,6 +41,8 @@ addSeq <- function(BSgenome = NULL,
   return(intervals)
 }
 
+#' Chunk vector
+#' @export
 chunk <- function(vect, n_chunks = NULL, chunk_size = 1e4)
 {
   if (!is.null(n_chunks)) 
@@ -52,6 +54,10 @@ chunk <- function(vect, n_chunks = NULL, chunk_size = 1e4)
   return(chunks)
 }
 
+#' Split files into equally sized chunks
+#' @param paths Character. Path(s) to file(s).
+#' @param n_chunks Integer. Number of groups to split files into.
+#' @export
 chunkFiles <- function(paths,
                        n_chunks = NULL)
 {
