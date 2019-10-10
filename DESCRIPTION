@@ -11,6 +11,23 @@ RoxygenNote: 6.1.1
 biocViews:
 Imports:
   data.table,
-  future.apply,
+  doFuture,
+  dplyr,
   fastmatch,
-  Matrix
+  future,
+  future.apply,
+  foreach,
+  fst,
+  GenomeInfoDb,
+  GenomicAlignments,
+  GenomicRanges,
+  ggplot2,
+  glue,
+  IRanges,
+  magrittr,
+  Matrix,
+  parallel,
+  plyranges,
+  Rsamtools,
+  S4Vectors,
+  tibble

@@ -177,18 +177,17 @@ importDFAM <- function(path,
                        main_assembly = TRUE)          
 {
   dfam_hits <- fread(path)
+  
+  # mod column names
   colnames(dfam_hits) <- gsub('-', '_', colnames(dfam_hits))
   colnames(dfam_hits) <- gsub('#', '', colnames(dfam_hits))
+  setnames(dfam_hits, c('hmm_st', 'hmm_en', 'ali_st', 'ali_en', 'seq_name', 'family_name'), c('position_start', 'position_end', 'start', 'end', 'seqnames', 'name'))
   
-  res <- 
-    dfam_hits %>% 
-      mutate(start = ifelse(strand == '+', ali_st, ali_en),
-             end = ifelse(strand == '+', ali_en, ali_st),
-             seqnames = seq_name, 
-             name = family_name,
-             id_unique = paste(name, 1:nrow(.), sep = '|'))  
-      as_granges()
-      
+  dfam_hits[, id_unique := paste(name, 1:nrow(dfam_hits), sep = '|')]
+  dfam_hits[, start_old := start][which(strand == '-'), ':=' (start = end, end = start_old)][, start_old := NULL]
+  
+  res <- as_granges(dfam_hits)
+  
   if (main_assembly)
   {
     res <- GenomeInfoDb::keepStandardChromosomes(res, pruning.mode = 'coarse')
@@ -282,23 +281,23 @@ importRMSK <- function(path,
   # keep only major classes
   if (main_classes)
   {
-    rmsk_hits <- rmsk_hits[which(class %in% c('DNA', 'SINE', 'LTR', 'LINE')), ]
+    rmsk_hits <- rmsk_hits[which(class %fin% c('DNA', 'SINE', 'LTR', 'LINE')), ]
   }
 
   # adjust position on alignment based on strand
   rmsk_hits <- rmsk_hits[which(strand == '-'), ':=' (position_start = as.character(position_end), position_end = as.integer(left_rep))][, !'left_rep']
-  rmsk_hits$position_start <- as.integer(rmsk_hits$position_start)
+  rmsk_hits[, position_start := as.integer(position_start)]
   
   if (proper_alignments)
   {
     rmsk_hits <- rmsk_hits[which(strand == '+' & position_start < position_end | strand == '-' & position_start > position_end), ]
   }
    
-  res <-
-    rmsk_hits %>%
-    mutate(id_unique = paste(name, 1:nrow(.), sep = '|')) %>%
-    select(-left_chrom, -class_family) %>%    
-    as_granges()
+  res <- 
+    rmsk_hits[, id_unique := paste(name, 1:nrow(rmsk_hits), sep = '|')
+      ][, ':=' (left_chrom = NULL, class_family = NULL)
+        ][order(seqnames, start, end), ]    
+  res <- as_granges(res)
     
   if (main_assembly)
   {
@@ -336,19 +335,19 @@ importUCSC <- function(path = 'path to UCSC RMSK file',
 								        'class', 'repfamily', 'position_start', 'position_end', 'left_rep', 'id_unique'))
   
   # adjust position on alignment based on strand
-  ucsc_rmsk                <- ucsc_rmsk[which(strand == '-'), position_start := (left_rep)][, !'left_rep']
-  ucsc_rmsk$position_start <- as.integer(ucsc_rmsk$position_start)
+  ucsc_rmsk <- ucsc_rmsk[which(strand == '-'), position_start := (left_rep)][, !'left_rep']
+  ucsc_rmsk[, position_start := as.integer(position_start)]
   
   # keep only major classes
   if (main_classes)
   {
-    ucsc_rmsk <-  ucsc_rmsk[which(class %in% c('DNA', 'SINE', 'LTR', 'LINE')), ]
+    ucsc_rmsk <-  ucsc_rmsk[which(class %fin% c('DNA', 'SINE', 'LTR', 'LINE')), ]
   }
   
-  res <-
-    ucsc_rmsk%>%
-    mutate(id_unique = paste(name, 1:nrow(.), sep = '|')) %>%
-    as_granges()
+  res <- 
+    ucsc_rmsk[, id_unique := paste(name, 1:nrow(ucsc_rmsk), sep = '|')
+      ][order(seqnames, start, end), ]    
+  res <- as_granges(res)
     
   if (main_assembly)
   {
@@ -361,6 +360,26 @@ importUCSC <- function(path = 'path to UCSC RMSK file',
   }
   return(res)
 }
+
+#' Import TE intervals in common file formats
+#' @export
+importTEs <- function(path,
+                      curate = FALSE,
+                      main_classes = TRUE,
+                      main_assembly = TRUE,
+                      type = NULL,
+                      keep_format = TRUE)
+{
+  if (is.null(type))     { type <- checkFormat(path) }
+  if (type == 'unknown') { stop ('Source format is unknown, please define (e.g. Repeatmasker, Dfam, etc.)') }
+
+  message ('Importing TE coordinates from ', type ,' source')
+  if (type == 'rmsk') { res <- importRMSK(path, curate = curate, main_classes = main_classes, main_assembly = main_assembly, proper_alignments = TRUE) }
+  if (type == 'ucsc') { res <- importUCSC(path, curate = curate, main_classes = main_classes, main_assembly = main_assembly)                           }
+  if (type == 'dfam') { res <- importDFAM(path, curate = curate, main_assembly = main_assembly)                                                        }
+
+  return(res)
+}                      
 
 import10x <- function(path,
                       long = TRUE)
@@ -443,8 +462,8 @@ import10x <- function(path,
         mate_2 <- mate == 'second' | mate == 'last'
         
         # check file type
-        if (sum(substring(path, nchar(path) - 2, nchar(path)) %in% c('bam', 'BAM', 'Bam')) > 0) { file_type <- 'bam' }
-        if (sum(substring(path, nchar(path) - 2, nchar(path)) %in% c('sam', 'SAM', 'Sam')) > 0) { file_type <- 'sam' }
+        if (sum(substring(path, nchar(path) - 2, nchar(path)) %fin% c('bam', 'BAM', 'Bam')) > 0) { file_type <- 'bam' }
+        if (sum(substring(path, nchar(path) - 2, nchar(path)) %fin% c('sam', 'SAM', 'Sam')) > 0) { file_type <- 'sam' }
         
         message(glue("Reading {path}"))
 
@@ -518,7 +537,7 @@ import10x <- function(path,
         if (data.table)
         {
           res <- as.data.table(res)
-          res <- res[, colnames(res) %in% c('seqnames', 'strand', 'start', 'end', 'NH', 'UR', 'barcode', barcode, what, tag), with = FALSE]
+          res <- res[, colnames(res) %fin% c('seqnames', 'strand', 'start', 'end', 'NH', 'UR', 'barcode', barcode, what, tag), with = FALSE]
         }
         
         # modify barcode column names
