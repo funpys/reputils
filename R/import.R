@@ -137,18 +137,18 @@ importBAM <- function(bams,
         mcols(reads)$mrnm <- gsub('^chrMT', 'chrM', mcols(reads)$mrnm)
       }
     }
-  } else {
-    if (seqlevelsStyle(as_granges(reads[sample(1:nrow(reads), min(nrow(reads), 1000)),])) != 'UCSC')
-    {
-      reads <- reads[, seqnames := paste0('chr', seqnames)]
-      reads <- reads[which(seqnames == 'chrMT'), seqnames := 'chrM']
-      if (!is.null(reads$mrnm))
-      {
-        reads <- reads[, mrnm := paste0('chr', mrnm)]
-        reads <- reads[which(mrnm == 'chrMT'), mrnm := 'chrM']
-      }
-    }  
-  }
+  } # else {
+    # if (GenomeInfoDb::seqlevelsStyle(as_granges(reads[sample(1:nrow(reads), min(nrow(reads), 1000)),])) != 'UCSC')
+    # {
+      # reads <- reads[, seqnames := paste0('chr', seqnames)]
+      # reads <- reads[which(seqnames == 'chrMT'), seqnames := 'chrM']
+      # if (!is.null(reads$mrnm))
+      # {
+        # reads <- reads[, mrnm := paste0('chr', mrnm)]
+        # reads <- reads[which(mrnm == 'chrMT'), mrnm := 'chrM']
+      # }
+    # }  
+  # }
   
   if (sorted)
   {
