@@ -44,7 +44,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
             stop(sprintf("Failed to create a directory %s", tmp.dirname),
                 call. = F)
         cat("Preparing for distribution...\n")
-        save(.GLIBDIR, file = paste(tmp.dirname, "libdir", sep = "/"))
+        #save(.GLIBDIR, file = paste(tmp.dirname, "libdir", sep = "/"))
        
         if (is.null(envir)) {  
           vars <- ls(all.names = TRUE, envir = parent.frame())
