@@ -103,7 +103,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
                     job.name <- sprintf("sgjob_%s", i)
                   }
                   command <- sprintf("qsub -terse -cwd -S /bin/bash -N %s -o %s -e %s -V %s %s %d '%s' '%s'",
-                    job.name, out.file, err.file, opt.flags,
+                    job.name, out.file, err.file,
                     script, i, tmp.dirname, R)
                   jobid <- system(command, intern = TRUE)
                   if (length(jobid) != 1)
