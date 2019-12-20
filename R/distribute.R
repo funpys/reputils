@@ -5,7 +5,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
     queue = NULL, memory = NULL, threads = NULL, io_saturation = NULL,
     queue_flag = "-q @{queue}", memory_flag = "-l mem_free=@{memory}G",
     threads_flag = "-pe threads @{threads}", io_saturation_flag = "-l io_saturation=@{io_saturation}",
-    script = '/home/davidbr/tgdata/src/gpatterns/exec/sgjob.sh')
+    script = '/home/bskim/.conda/envs/repsc_env/lib/R/library/gpatterns/exec/sgjob.sh')
 {
     qq <- GetoptLong::qq
     
