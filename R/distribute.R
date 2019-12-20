@@ -34,7 +34,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
     if (!length(system("which qsub", ignore.stderr = T, intern = T)))
         stop("gcluster.run2 must run on a host that supports Sun Grid Engine (qsub)",
             call. = F)
-    .gcheckroot()
+
     tmp.dirname <- ""
     submitted.jobs <- c()
     tryCatch({
