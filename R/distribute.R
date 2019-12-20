@@ -38,7 +38,7 @@ function (..., command_list = NULL, opt.flags = "", envir = NULL, max.jobs = 400
     tmp.dirname <- ""
     submitted.jobs <- c()
     tryCatch({
-        tmp.dirname <- tempfile(pattern = "", tmpdir = paste(get("GROOT"),
+        tmp.dirname <- tempfile(pattern = "", tmpdir = paste("",
             "/tmp", sep = ""))
         if (!dir.create(tmp.dirname, recursive = T, mode = "0777"))
             stop(sprintf("Failed to create a directory %s", tmp.dirname),
