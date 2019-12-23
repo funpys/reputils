@@ -48,7 +48,7 @@ importBAM <- function(bams,
   
   # pre-checking
   if (is.na(paired) & is.na(bams$paired)) { stop ('Please specify paired status of bam files')  }
-  if (is.na(mate)   & is.na(bams$mate))   { stop ('Please specify mate to read from bam files') }
+  #if (is.na(mate)   & is.na(bams$mate))   { stop ('Please specify mate to read from bam files') }
   
   if (sum(dirname(bams$paths) == '.') > 0) { stop ('Please provide full path to files') }
   
